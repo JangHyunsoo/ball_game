@@ -36,8 +36,8 @@ public:
 		SDL_SetWindowTitle(window_, win_name.c_str());
 	}
 public:
-	bool initTest(int _width, int _height) {
-		if (!initSDL(_width, _height)) return false;
+	bool initTest(char* window_name, int _width, int _height) {
+		if (!initSDL(window_name, _width, _height)) return false;
 		if (!initManager()) return false;
 
 		return true;
@@ -96,7 +96,7 @@ public:
 		SDL_Quit();
 	}
 private:
-	bool initSDL(int _width, int _height) {
+	bool initSDL(char* window_name, int _width, int _height) {
 		if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 			return false;
 		}
@@ -104,7 +104,7 @@ private:
 		width_ = _width;
 		height_ = _height;
 
-		window_ = SDL_CreateWindow("test", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, SDL_WINDOW_SHOWN);
+		window_ = SDL_CreateWindow(window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, SDL_WINDOW_SHOWN);
 		renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
 
 		return true;
