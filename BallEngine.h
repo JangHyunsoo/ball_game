@@ -8,17 +8,17 @@
 
 using namespace std;
 
-class BallGame
+class BallEngine
 {
 public:
-	static BallGame& getInstance() {
-		static BallGame instance;
+	static BallEngine& getInstance() {
+		static BallEngine instance;
 		return instance;
 	}
 private:
-	BallGame() {}
-	BallGame(BallGame const& other) = delete;
-	void operator=(BallGame const& other) = delete;
+	BallEngine() {}
+	BallEngine(BallEngine const& other) = delete;
+	void operator=(BallEngine const& other) = delete;
 
 private:
 	int screen_width_;

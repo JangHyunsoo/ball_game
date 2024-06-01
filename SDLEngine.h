@@ -4,7 +4,7 @@
 #include <SDL.h>
 #include "InputManager.h"
 #include "Ball.h"
-#include "BallGame.h"
+#include "BallEngine.h"
 
 class SDLEngine
 {
@@ -73,7 +73,7 @@ public:
 	}
 
 	bool update(float deltaTime) {
-		BallGame::getInstance().update(deltaTime);
+		BallEngine::getInstance().update(deltaTime);
 		return true;
 	}
 
@@ -87,7 +87,7 @@ public:
 	}
 	
 	void render(SDL_Renderer* _renderer) {
-		BallGame::getInstance().render(_renderer);
+		BallEngine::getInstance().render(_renderer);
 	}
 
 	void destory() {
@@ -115,8 +115,8 @@ private:
 			std::cout << "InputManager init Error...\n";
 			return false;
 		}
-		if (!BallGame::getInstance().init(width_,height_, 1000)) {
-			std::cout << "BallGame init Error...\n";
+		if (!BallEngine::getInstance().init(width_,height_, 1000)) {
+			std::cout << "BallEngine init Error...\n";
 			return false;
 		}
 		return true;
