@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include <iostream>
 #include "InputManager.h"
-#include "SDLEngine.h"
 #include "Ball.h"
 #include "cuda_partition.h"
 
@@ -83,7 +83,9 @@ public:
 			int mouse_y = InputManager::getInstance().getY();
 
 			int selected_idx = selectBallCuda(vecBalls, mouse_x, mouse_y);
-			pSelectedBall = &vecBalls[selected_idx];
+			if (selected_idx != -1) {
+				pSelectedBall = &vecBalls[selected_idx];
+			}
 		}
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::HOLD))

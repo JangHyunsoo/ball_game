@@ -1,3 +1,4 @@
+#define __CUDACC__
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 #include <thrust/device_vector.h>
@@ -17,6 +18,12 @@ __global__ void checkSelectBall(Ball* balls, int n, int mouse_x, int mouse_y, in
 
     if (idx >= n) return;
 
+    if (threadIdx.x == 0) {
+        *result = -1;
+    }
+
+    __syncthreads();
+
     if (isPointInCircle(ball.px, ball.py, ball.radius, mouse_x, mouse_y))
     {
         // atomicMin(result, idx);
@@ -26,7 +33,7 @@ __global__ void checkSelectBall(Ball* balls, int n, int mouse_x, int mouse_y, in
 
 int selectBallCuda(const std::vector<Ball>& _host_balls, int mouse_x, int mouse_y) {
     int n = _host_balls.size();
-    int host_selected_idx = 0;
+    int host_selected_idx = -1;
     int* device_selected_idx;
     Ball* device_balls;
     cudaMalloc(&device_balls, n * sizeof(Ball));
