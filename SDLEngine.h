@@ -44,7 +44,7 @@ public:
 	}
 	bool logic() {
 		SDL_Event event;
-		Uint32 lastTime = SDL_GetTicks();
+		Uint64 lastTime = SDL_GetPerformanceCounter();
 
 		while (running_) {
 			while (SDL_PollEvent(&event)) {
@@ -56,11 +56,11 @@ public:
 				InputManager::getInstance().update(event);
 			}
 
-			Uint32 currentTime = SDL_GetTicks();
-			float deltaTime = (currentTime - lastTime) / 1000.0f;
+			Uint64 currentTime = SDL_GetPerformanceCounter();
+			double deltaTime = (double)((currentTime - lastTime) / (double)SDL_GetPerformanceFrequency());
 			lastTime = currentTime;
 
-			setWindowName("FPS: " + std::to_string(deltaTime));
+			setWindowName("FPS: " + std::to_string(1 / deltaTime));
 
 			update(deltaTime);
 
@@ -115,7 +115,7 @@ private:
 			std::cout << "InputManager init Error...\n";
 			return false;
 		}
-		if (!BallGame::getInstance().init(width_,height_,100)) {
+		if (!BallGame::getInstance().init(width_,height_, 1000)) {
 			std::cout << "BallGame init Error...\n";
 			return false;
 		}

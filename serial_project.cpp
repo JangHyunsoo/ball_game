@@ -9,7 +9,7 @@ using namespace std;
 
 
 int main(int argc, char* argv[]) {
-    if (!SDLEngine::getInstance().initTest(1920, 1080)) return false;
+    if (!SDLEngine::getInstance().initTest(1600, 900)) return false;
     else {
         SDLEngine::getInstance().logic();
     }
