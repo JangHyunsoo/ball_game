@@ -3,15 +3,17 @@
 #include <string>
 #include <vector>
 #include "SDLEngine.h"
+#include "cuda_partition.h"
 
 using namespace std;
 
 
 int main(int argc, char* argv[]) {
-    if (!SDLEngine::getInstance().init("Ball Game", 640, 640)) return false;
+    if (!SDLEngine::getInstance().initTest(1920, 1080)) return false;
     else {
         SDLEngine::getInstance().logic();
     }
     SDLEngine::getInstance().destory();
     return 0;
 }
+

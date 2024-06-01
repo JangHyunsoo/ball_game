@@ -2,44 +2,36 @@
 #include <vector>
 #include <cmath>
 #include "InputManager.h"
+#include "SDLEngine.h"
+#include "Ball.h"
+#include "cuda_partition.h"
 
 using namespace std;
 
-struct sBall
-{
-    float px, py; // 중앙
-    float vx, vy; // 속도
-    float ax, ay; // 가속
-    float radius; // 반지름
-    float mass; // 무게
-
-    int id; // idx
-};
-
-class BallEngine
+class BallGame
 {
 public:
-	static BallEngine& getInstance() {
-		static BallEngine instance;
+	static BallGame& getInstance() {
+		static BallGame instance;
 		return instance;
 	}
 private:
-	BallEngine() {}
-	BallEngine(BallEngine const& other) = delete;
-	void operator=(BallEngine const& other) = delete;
+	BallGame() {}
+	BallGame(BallGame const& other) = delete;
+	void operator=(BallGame const& other) = delete;
 
 
 private:
-	int screenWidth = 640;
-	int screenHeight = 640;
+	int screen_width_;
+	int screen_height_;
 
 private:
-	vector<sBall> vecBalls;
-	sBall* pSelectedBall = nullptr;
+	vector<Ball> vecBalls;
+	Ball* pSelectedBall = nullptr;
 
 	void AddBall(float x, float y, float r = 5.0f)
 	{
-		sBall b;
+		Ball b;
 		b.px = x; b.py = y;
 		b.vx = 0; b.vy = 0;
 		b.ax = 0; b.ay = 0;
@@ -70,12 +62,14 @@ private:
 	}
 
 public:
-	bool init(int circle_count = 100)
+	bool init(int _width, int _hegiht, int _circle_count)
 	{
 		float fDefaultRad = 8.0f;
+		screen_width_ = _width;
+		screen_height_ = _hegiht;
 
-		for (int i = 0; i < circle_count; i++)
-			AddBall(rand() % screenWidth, rand() % screenHeight, rand() % 16 + 2);
+		for (int i = 0; i < _circle_count; i++)
+			AddBall(rand() % screen_width_, rand() % screen_height_, rand() % 16 + 2);
 
 		return true;
 	}
@@ -88,14 +82,8 @@ public:
 			int mouse_x = InputManager::getInstance().getX();
 			int mouse_y = InputManager::getInstance().getY();
 
-			for (auto& ball : vecBalls)
-			{
-				if (isPointInCircle(ball.px, ball.py, ball.radius, mouse_x, mouse_y))
-				{
-					pSelectedBall = &ball;
-					break;
-				}
-			}
+			int selected_idx = selectBallCuda(vecBalls, mouse_x, mouse_y);
+			pSelectedBall = &vecBalls[selected_idx];
 		}
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::HOLD))
@@ -127,7 +115,7 @@ public:
 			pSelectedBall = nullptr;
 		}
 		
-		vector<pair<sBall*, sBall*>> vecCollidingPairs;
+		vector<pair<Ball*, Ball*>> vecCollidingPairs;
 
 		for (auto& ball : vecBalls)
 		{
@@ -139,10 +127,10 @@ public:
 			ball.px += ball.vx * deltaTime;
 			ball.py += ball.vy * deltaTime;
 
-			if (ball.px < 0) ball.px += (float)screenWidth;
-			if (ball.px >= screenWidth) ball.px -= (float)screenWidth;
-			if (ball.py < 0) ball.py += (float)screenHeight;
-			if (ball.py >= screenHeight) ball.py -= (float)screenHeight;
+			if (ball.px < 0) ball.px += (float)screen_width_;
+			if (ball.px >= screen_width_) ball.px -= (float)screen_width_;
+			if (ball.py < 0) ball.py += (float)screen_height_;
+			if (ball.py >= screen_height_) ball.py -= (float)screen_height_;
 
 			if (fabs(ball.vx * ball.vx + ball.vy * ball.vy) < 0.01f)
 			{
@@ -178,8 +166,8 @@ public:
 
 		for (auto c : vecCollidingPairs)
 		{
-			sBall* b1 = c.first;
-			sBall* b2 = c.second;
+			Ball* b1 = c.first;
+			Ball* b2 = c.second;
 
 			float fDistance = sqrtf((b1->px - b2->px) * (b1->px - b2->px) + (b1->py - b2->py) * (b1->py - b2->py));
 
