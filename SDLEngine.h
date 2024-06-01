@@ -1,5 +1,6 @@
 #pragma once
 #include <SDL.h>
+#include <string>
 #include <iostream>
 #include "InputManager.h"
 #include "BallEngine.h"
@@ -32,7 +33,7 @@ public:
 	}
 	bool logic() {
 		SDL_Event event;
-		Uint32 lastTime = SDL_GetTicks();
+		Uint64 lastTime = SDL_GetPerformanceCounter();
 
 		while (running_) {
 			while (SDL_PollEvent(&event)) {
@@ -44,9 +45,11 @@ public:
 				InputManager::getInstance().update(event);
 			}
 
-			Uint32 currentTime = SDL_GetTicks();
-			float deltaTime = (currentTime - lastTime) / 1000.0f;
+			Uint64 currentTime = SDL_GetPerformanceCounter();
+			double deltaTime = (double)((currentTime - lastTime) / (double)SDL_GetPerformanceFrequency());
 			lastTime = currentTime;
+
+			SDL_SetWindowTitle(window_, ("FPS: " + std::to_string(1 / deltaTime)).c_str());
 
 			update(deltaTime);
 
@@ -102,7 +105,7 @@ private:
 			cout << "InputManager init Error...\n";
 			return false;
 		}
-		if (!BallEngine::getInstance().init()) {
+		if (!BallEngine::getInstance().init(width_, height_, 1000)) {
 			cout << "BallEngine init Error...\n";
 			return false;
 		}

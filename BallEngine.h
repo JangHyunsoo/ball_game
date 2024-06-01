@@ -30,8 +30,8 @@ private:
 
 
 private:
-	int screenWidth = 640;
-	int screenHeight = 640;
+	int screen_width_;
+	int screen_height_;
 
 private:
 	vector<sBall> vecBalls;
@@ -70,12 +70,15 @@ private:
 	}
 
 public:
-	bool init(int circle_count = 100)
+	bool init(int _width, int _height, int _circle_count)
 	{
-		float fDefaultRad = 8.0f;
+		screen_width_ = _width;
+		screen_height_ = _height;
 
-		for (int i = 0; i < circle_count; i++)
-			AddBall(rand() % screenWidth, rand() % screenHeight, rand() % 16 + 2);
+		AddBall(_width / 2, _height / 2, 20);
+
+		for (int i = 0; i < _circle_count; i++)
+			AddBall(rand() % screen_width_, rand() % screen_height_, rand() % 4 + 2);
 
 		return true;
 	}
@@ -139,10 +142,10 @@ public:
 			ball.px += ball.vx * deltaTime;
 			ball.py += ball.vy * deltaTime;
 
-			if (ball.px < 0) ball.px += (float)screenWidth;
-			if (ball.px >= screenWidth) ball.px -= (float)screenWidth;
-			if (ball.py < 0) ball.py += (float)screenHeight;
-			if (ball.py >= screenHeight) ball.py -= (float)screenHeight;
+			if (ball.px < 0) ball.px += (float)screen_width_;
+			if (ball.px >= screen_width_) ball.px -= (float)screen_width_;
+			if (ball.py < 0) ball.py += (float)screen_height_;
+			if (ball.py >= screen_height_) ball.py -= (float)screen_height_;
 
 			if (fabs(ball.vx * ball.vx + ball.vy * ball.vy) < 0.01f)
 			{
