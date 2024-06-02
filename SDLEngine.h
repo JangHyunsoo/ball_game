@@ -115,7 +115,7 @@ private:
 			std::cout << "InputManager init Error...\n";
 			return false;
 		}
-		if (!BallEngine::getInstance().init(width_,height_, 1000)) {
+		if (!BallEngine::getInstance().init(width_,height_, 5000)) {
 			std::cout << "BallEngine init Error...\n";
 			return false;
 		}
