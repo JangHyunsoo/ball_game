@@ -50,12 +50,6 @@ __global__ void checkSelectBall(Ball* balls, int n, int mouse_x, int mouse_y, in
 
     Ball ball = balls[idx];
 
-    if (threadIdx.x == 0) {
-        *result = -1;
-    }
-
-    __syncthreads();
-
     if (isPointInCircle(ball.px, ball.py, ball.radius, mouse_x, mouse_y))
     {
         // atomicMin(result, idx);
@@ -64,10 +58,10 @@ __global__ void checkSelectBall(Ball* balls, int n, int mouse_x, int mouse_y, in
 }
 
 int selectBallCuda(int mouse_x, int mouse_y) {
-    int host_selected_idx = -1;
+    int host_selected_idx = 0;
     int* device_selected_idx;
     cudaMalloc(&device_selected_idx, sizeof(int));
-    cudaMemcpy(&device_selected_idx, &host_selected_idx, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemset(device_selected_idx, -1, sizeof(int));
 
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
