@@ -42,9 +42,14 @@ public:
 
 		return true;
 	}
+
 	bool logic() {
 		SDL_Event event;
 		Uint64 lastTime = SDL_GetPerformanceCounter();
+		double total_time = 0;
+		int count = 0;
+		double average_fps = 0;
+		double limit_time = 5;
 
 		while (running_) {
 			while (SDL_PollEvent(&event)) {
@@ -59,8 +64,16 @@ public:
 			Uint64 currentTime = SDL_GetPerformanceCounter();
 			double deltaTime = (double)((currentTime - lastTime) / (double)SDL_GetPerformanceFrequency());
 			lastTime = currentTime;
+			total_time += deltaTime;
+			count++;
 
-			setWindowName("FPS: " + std::to_string(1 / deltaTime));
+			if (total_time >= limit_time) {
+				average_fps = (double)count / total_time;
+				total_time -= limit_time;
+				count = 1;
+				cout << "Average : " << average_fps << '\n';
+			}
+			SDL_SetWindowTitle(window_, (("FPS: " + std::to_string(1 / deltaTime)) + (std::string)"  Average: " + std::to_string(average_fps)).c_str());
 
 			update(deltaTime);
 
