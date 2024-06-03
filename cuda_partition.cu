@@ -112,8 +112,18 @@ __global__ void setBall(Ball* balls, int n, int idx, Ball ball) {
     }
 }
 
+__global__ void test(Ball* balls, int n, int idx, float value) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        balls[idx].vx = value;
+    }
+}
+
 void setBallArray(int idx, Ball ball) {
     setBall << <1, 1 >> > (device_balls, n, idx, ball);
+}
+
+void testCuda(int idx, float value) {
+    test << <1, 1 >> > (device_balls, n, idx, value);
 }
 
 __device__ bool doCirclesOverlap(float x1, float y1, float r1, float x2, float y2, float r2)
