@@ -43,7 +43,7 @@ private:
 	bool doCirclesOverlap(float x1, float y1, float r1, float x2, float y2, float r2)
 	{
 		return fabs((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) <= (r1 + r2) * (r1 + r2);
-	}	
+	}
 	bool isPointInCircle(float x1, float y1, float r1, float px, float py)
 	{
 		return fabs((x1 - px) * (x1 - px) + (y1 - py) * (y1 - py)) < (r1 * r1);
@@ -67,9 +67,9 @@ public:
 		selected_idx_ = -1;
 		screen_width_ = _width;
 		screen_height_ = _height;
-
 		AddBall(_width / 2, _height / 2, 20);
 
+		srand(123456789);
 		for (int i = 0; i < _circle_count; i++)
 			AddBall(rand() % screen_width_, rand() % screen_height_, rand() % 4 + 2);
 
@@ -79,6 +79,7 @@ public:
 	}
 
 	bool update(double deltaTime) {
+		test();
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::PRESS) || InputManager::getInstance().isRightMouse(KeyPress::PRESS))
 		{

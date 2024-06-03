@@ -22,7 +22,9 @@ int n;
 
 __global__ void arrayToStructure(Ball* balls, float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, float* radius_vec, float* mass_vec, int n) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    
+
+    If (idx >= n) Return;
+
     balls[idx].px = px_vec[idx];
     balls[idx].py = py_vec[idx];
     balls[idx].vx = vx_vec[idx];
@@ -31,61 +33,63 @@ __global__ void arrayToStructure(Ball* balls, float* px_vec, float* py_vec, floa
     balls[idx].ay = ay_vec[idx];
     balls[idx].radius = radius_vec[idx];
     balls[idx].mass = mass_vec[idx];
-    balls[idx].idx = idx
+    balls[idx].id = idx;
+
+    //printf("%d  : %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", idx, px_vec[idx], balls[idx].py, balls[idx].vx, balls[idx].vy, balls[idx].ax, balls[idx].ay, balls[idx].mass, balls[idx].radius);
 }
 
-std::vector<Ball> deviceArrayToVector(Ball* device_array, int n) {
+std: vector<Ball> deviceArrayToVector() {
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
-    
+
     std::vector<Ball> host_vector(n);
 
-    arrayToStructure<<<blocksPerGrid, threadsPerBlock>>>(device_balls, device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n);
-    
-    cudaMemcpy(host_vector.data(), device_array, n * sizeof(Ball), cudaMemcpyDeviceToHost);
+    arrayToStructure << <blocksPerGrid, threadsPerBlock >> > (device_balls, device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n);
+
+    cudaMemcpy(host_vector.data(), device_balls, n * sizeof(Ball), cudaMemcpyDeviceToHost);
 
     return host_vector;
 }
 
 void initBallCuda(const std::vector<Ball>& _host_balls) {
     n = _host_balls.size();
-    vector<float> px_vec(n);
-    vector<float> py_vec(n);
-    vector<float> vx_vec(n);
-    vector<float> vy_vec(n);
-    vector<float> ax_vec(n);
-    vector<float> ay_vec(n);
-    vector<float> radius_vec(n);
-    vector<float> mass_vec(n);
-    
-    for(int i = 0; i < n; i++){
-	    px_vec[i] = _host_balls[i].px;
-	    py_vec[i] = _host_balls[i].py;
-	    vx_vec[i] = _host_balls[i].vx;
-	    vy_vec[i] = _host_balls[i].vy;
-	    ax_vec[i] = _host_balls[i].ax;
-	    ay_vec[i] = _host_balls[i].ay;
-	    radius_vec[i] = _host_balls[i].radius;
-	    mass_vec[i] = _host_balls[i].mass;
+    std::vector<float> px_vec(n);
+    std::vector<float> py_vec(n);
+    std::vector<float> vx_vec(n);
+    std::vector<float> vy_vec(n);
+    std::vector<float> ax_vec(n);
+    std::vector<float> ay_vec(n);
+    std::vector<float> radius_vec(n);
+    std::vector<float> mass_vec(n);
+
+    for (int i = 0; i <n; i++) {
+        px_vec[i] = _host_balls[i].px;
+        py_vec[i] = _host_balls[i].py;
+        vx_vec[i] = _host_balls[i].vx;
+        vy_vec[i] = _host_balls[i].vy;
+        ax_vec[i] = _host_balls[i].ax;
+        ay_vec[i] = _host_balls[i].ay;
+        radius_vec[i] = _host_balls[i].radius;
+        mass_vec[i] = _host_balls[i].mass;
     }
-    
-    cudaMalloc(device_px, n * sizeof(float));
+
+    cudaMalloc(& device_px, n * sizeof(float));
     cudaMemcpy(device_px, px_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_py, n * sizeof(float));
+    cudaMalloc(& device_py, n * sizeof(float));
     cudaMemcpy(device_py, py_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_vx, n * sizeof(float));
+    cudaMalloc(& device_vx, n * sizeof(float));
     cudaMemcpy(device_vx, vx_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_vy, n * sizeof(float));
+    cudaMalloc(& device_vy, n * sizeof(float));
     cudaMemcpy(device_vy, vy_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_ax, n * sizeof(float));
+    cudaMalloc(& device_ax, n * sizeof(float));
     cudaMemcpy(device_ax, ax_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_ay, n * sizeof(float));
+    cudaMalloc(& device_ay, n * sizeof(float));
     cudaMemcpy(device_ay, ay_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_radius, n * sizeof(float));
+    cudaMalloc(& device_radius, n * sizeof(float));
     cudaMemcpy(device_radius, radius_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(device_mass, n * sizeof(float));
+    cudaMalloc(& device_mass, n * sizeof(float));
     cudaMemcpy(device_mass, mass_vec.data(), n * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMalloc(&device_balls, n * sizeof(Ball));
+    cudaMalloc(& device_balls, n * sizeof(Ball));
     cudaMemcpy(device_balls, _host_balls.data(), n * sizeof(Ball), cudaMemcpyHostToDevice);
 }
 
@@ -103,20 +107,20 @@ void freeBallCuda() {
 
 __device__ bool isPointInCircle(float x1, float y1, float r1, float px, float py)
 {
-    return fabs((x1 - px) * (x1 - px) + (y1 - py) * (y1 - py)) < (r1 * r1);
+    Return fabs((x1 - px) * (x1 - px) + (y1 - py) * (y1 - py)) < (r1 * r1);
 }
 
 __global__ void checkSelectBall(float* px_vec, float* py_vec, float* radius_vec, int n, int mouse_x, int mouse_y, int* result) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (idx >= n) return;
+    If (idx >= n) Return;
 
     int px = px_vec[idx];
     int py = py_vec[idx];
     int radius = radius_vec[idx];
 
 
-    if (isPointInCircle(px, py, radius, mouse_x, mouse_y))
+    If (isPointInCircle(px, py, radius, mouse_x, mouse_y))
     {
         // atomicMin(result, idx);
         *result = idx;
@@ -126,13 +130,13 @@ __global__ void checkSelectBall(float* px_vec, float* py_vec, float* radius_vec,
 int selectBallCuda(int mouse_x, int mouse_y) {
     int host_selected_idx = 0;
     int* device_selected_idx;
-    cudaMalloc(&device_selected_idx, sizeof(int));
+    cudaMalloc(& device_selected_idx, sizeof(int));
     cudaMemset(device_selected_idx, -1, sizeof(int));
 
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
 
-    checkSelectBall <<<blocksPerGrid, threadsPerBlock>>> (device_px, device_py, device_radius, n, mouse_x, mouse_y, device_selected_idx);
+    checkSelectBall << <blocksPerGrid, threadsPerBlock >> > (device_px, device_py, device_radius, n, mouse_x, mouse_y, device_selected_idx);
     cudaMemcpy(&host_selected_idx, device_selected_idx, sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaFree(device_selected_idx);
@@ -143,8 +147,8 @@ int selectBallCuda(int mouse_x, int mouse_y) {
 __global__ void moveBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, int n, int width, int height, float deltaTime) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    //printf("%.2f\n", px_vec[idx]);
     if (idx >= n) return;
-
     ax_vec[idx] = -vx_vec[idx] * 0.8f;
     ay_vec[idx] = -vy_vec[idx] * 0.8f;
 
@@ -153,15 +157,15 @@ __global__ void moveBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_
     px_vec[idx] += vx_vec[idx] * deltaTime;
     py_vec[idx] += vy_vec[idx] * deltaTime;
 
-    if (px_vec[idx] < 0) px_vec[idx] += (float)width;
+    if (px_vec[idx] <0) px_vec[idx] += (float)width;
     if (px_vec[idx] >= width) px_vec[idx] -= (float)width;
-    if (py_vec[idx] < 0) py_vec[idx] += (float)height;
+    if (py_vec[idx] <0) py_vec[idx] += (float)height;
     if (py_vec[idx] >= height) py_vec[idx] -= (float)height;
 
-    if (fabs(vx_vec[idx] * vx_vec[idx] + vy_vec[idx] * vy_vec[idx]) < 0.01f)
+    if (fabs(vx_vec[idx] * vx_vec[idx] + vy_vec[idx] * vy_vec[idx]) <0.01f)
     {
-        px_vec[idx] = 0;
-        py_vec[idx] = 0;
+        vx_vec[idx] = 0;
+        vy_vec[idx] = 0;
     }
 }
 
@@ -169,7 +173,8 @@ void moveBallCuda(int width, int height, double deltaTime) {
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
 
-    moveBall <<<blocksPerGrid, threadsPerBlock >>> (device_px, device_py, device_vx, device_vy, device_ax, device_ay, n, width, height, (float)deltaTime);
+    moveBall << <blocksPerGrid, threadsPerBlock >> > (device_px, device_py, device_vx, device_vy, device_ax, device_ay, n, width, height, (float)deltaTime);
+    
 }
 
 __global__ void setBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, float* radius_vec, float* mass_vec, int n, int idx, Ball ball) {
@@ -185,18 +190,8 @@ __global__ void setBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_v
     }
 }
 
-__global__ void test(Ball* balls, int n, int idx, float value) {
-    if (threadIdx.x == 0 && blockIdx.x == 0) {
-        balls[idx].vx = value;
-    }
-}
-
 void setBallArray(int idx, Ball ball) {
-    setBall << <1, 1 >> > (device_balls, n, idx, ball);
-}
-
-void testCuda(int idx, float value) {
-    test << <1, 1 >> > (device_balls, n, idx, value);
+    setBall << <1, 1 >> >(device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n, idx, ball);
 }
 
 __device__ bool doCirclesOverlap(float x1, float y1, float r1, float x2, float y2, float r2)
@@ -208,13 +203,13 @@ __global__ void collisionBall(float* px_vec, float* py_vec, float* vx_vec, float
     int one = blockIdx.x * blockDim.x + threadIdx.x;
     int other = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (other < n && one < n && other > one) {
-        if (doCirclesOverlap(px_vec[one], py_vec[one], raidus_vec[one], px_vec[other], py_vec[other], raidus_vec[other]))
+    if (other <n && one <n && other > one) {
+        if (doCirclesOverlap(px_vec[one], py_vec[one], radius_vec[one], px_vec[other], py_vec[other], radius_vec[other]))
         {
             // static
             float fDistance = sqrtf((px_vec[one] - px_vec[other]) * (px_vec[one] - px_vec[other]) + (py_vec[one] - py_vec[other]) * (py_vec[one] - py_vec[other]));
 
-            float fOverlap = 0.5f * (fDistance - raidus_vec[one] - raidus_vec[other]);
+            float fOverlap = 0.5f * (fDistance - radius_vec[one] - radius_vec[other]);
 
             px_vec[one] -= fOverlap * (px_vec[one] - px_vec[other]) / fDistance;
             py_vec[one] -= fOverlap * (py_vec[one] - py_vec[other]) / fDistance;
@@ -255,7 +250,11 @@ std::vector<Ball> collisionBallCuda() {
     int grid_size = ((n % BLOCK_SIZE) > 0 ? 1 : 0) + n / BLOCK_SIZE;
     dim3 grid(grid_size, grid_size);
 
-    collisionBall <<<grid, block >>> (device_px, device_py, device_vx, device_vy, device_radius, device_mass, n);
+    collisionBall << <grid, block >> > (device_px, device_py, device_vx, device_vy, device_radius, device_mass, n);
 
-    return deviceArrayToVector(device_balls, n);
+    return deviceArrayToVector();
+}
+
+void testCuda(int idx, float value) {
+    test << <1, 1 >> > (device_balls, n, idx, value);
 }

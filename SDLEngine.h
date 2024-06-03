@@ -42,6 +42,7 @@ public:
 
 		return true;
 	}
+
 	bool logic() {
 		SDL_Event event;
 		Uint64 lastTime = SDL_GetPerformanceCounter();
