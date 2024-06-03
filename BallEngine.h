@@ -151,5 +151,11 @@ public:
 	void destory() {
 		freeBallCuda();
 	}
+
+	void test() {
+		if (InputManager::getInstance().isPressKey(SDLK_SPACE)) {
+			testCuda(0, 200);
+		}
+	}
 };
 
