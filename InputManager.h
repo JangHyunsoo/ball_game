@@ -26,7 +26,7 @@ private:
 	KeyPress rightMouse = KeyPress::NONE;
     int mouse_x;
     int mouse_y;
-
+    SDL_Keycode keyCode;
 public:
     bool isLeftMouse(KeyPress keyState) {
         return leftMouse == keyState;
@@ -44,6 +44,13 @@ public:
     int getY() {
         return mouse_y;
     }
+    bool isPressKey(SDL_Keycode _key) {
+        return _key == keyCode;
+    }
+    void resetKeyCode() {
+        keyCode = SDLK_UNKNOWN;
+    }
+
 public:
 	bool init() {
 		leftMouse = KeyPress::NONE;
@@ -77,6 +84,8 @@ public:
                 SDL_GetMouseState(&mouse_x, &mouse_y);
             }
             break;
+        case SDL_KEYDOWN:
+            keyCode = event.key.keysym.sym;
         }
 
         return true;

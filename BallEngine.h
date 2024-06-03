@@ -74,7 +74,7 @@ public:
 	{
 		screen_width_ = _width;
 		screen_height_ = _height;
-
+		srand(123456789);
 		AddBall(_width / 2, _height / 2, 20);
 
 		for (int i = 0; i < _circle_count; i++)
@@ -84,6 +84,8 @@ public:
 	}
 
 	bool update(float deltaTime) {
+
+		test();
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::PRESS) || InputManager::getInstance().isRightMouse(KeyPress::PRESS))
 		{
@@ -226,6 +228,12 @@ public:
 		}
 	}
 
-
+	void test() {
+		if (InputManager::getInstance().isPressKey(SDLK_SPACE)) {
+			vecBalls[0].vx = 1000.f;
+			//vecBalls[0].vy = 1000.f;
+			InputManager::getInstance().resetKeyCode();
+		}
+	}
 };
 
