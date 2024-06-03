@@ -23,6 +23,8 @@ int n;
 __global__ void arrayToStructure(Ball* balls, float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, float* radius_vec, float* mass_vec, int n) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    if (idx >= n) return;
+
     balls[idx].px = px_vec[idx];
     balls[idx].py = py_vec[idx];
     balls[idx].vx = vx_vec[idx];
@@ -32,9 +34,11 @@ __global__ void arrayToStructure(Ball* balls, float* px_vec, float* py_vec, floa
     balls[idx].radius = radius_vec[idx];
     balls[idx].mass = mass_vec[idx];
     balls[idx].id = idx;
+
+    //printf("%d  : %.2f %.2f %.2f %.2f %.2f %.2f %.2f %.2f\n", idx, px_vec[idx], balls[idx].py, balls[idx].vx, balls[idx].vy, balls[idx].ax, balls[idx].ay, balls[idx].mass, balls[idx].radius);
 }
 
-std::vector<Ball> deviceArrayToVector(Ball* device_array, int n) {
+std::vector<Ball> deviceArrayToVector() {
     int threadsPerBlock = 256;
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
 
@@ -42,7 +46,7 @@ std::vector<Ball> deviceArrayToVector(Ball* device_array, int n) {
 
     arrayToStructure << <blocksPerGrid, threadsPerBlock >> > (device_balls, device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n);
 
-    cudaMemcpy(host_vector.data(), device_array, n * sizeof(Ball), cudaMemcpyDeviceToHost);
+    cudaMemcpy(host_vector.data(), device_balls, n * sizeof(Ball), cudaMemcpyDeviceToHost);
 
     return host_vector;
 }
@@ -143,8 +147,8 @@ int selectBallCuda(int mouse_x, int mouse_y) {
 __global__ void moveBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, int n, int width, int height, float deltaTime) {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
+    //printf("%.2f\n", px_vec[idx]);
     if (idx >= n) return;
-
     ax_vec[idx] = -vx_vec[idx] * 0.8f;
     ay_vec[idx] = -vy_vec[idx] * 0.8f;
 
@@ -160,8 +164,8 @@ __global__ void moveBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_
 
     if (fabs(vx_vec[idx] * vx_vec[idx] + vy_vec[idx] * vy_vec[idx]) < 0.01f)
     {
-        px_vec[idx] = 0;
-        py_vec[idx] = 0;
+        vx_vec[idx] = 0;
+        vy_vec[idx] = 0;
     }
 }
 
@@ -170,6 +174,7 @@ void moveBallCuda(int width, int height, double deltaTime) {
     int blocksPerGrid = (n + threadsPerBlock - 1) / threadsPerBlock;
 
     moveBall << <blocksPerGrid, threadsPerBlock >> > (device_px, device_py, device_vx, device_vy, device_ax, device_ay, n, width, height, (float)deltaTime);
+    
 }
 
 __global__ void setBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_vec, float* ax_vec, float* ay_vec, float* radius_vec, float* mass_vec, int n, int idx, Ball ball) {
@@ -186,7 +191,7 @@ __global__ void setBall(float* px_vec, float* py_vec, float* vx_vec, float* vy_v
 }
 
 void setBallArray(int idx, Ball ball) {
-    setBall << <1, 1 >> > (device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n, idx, ball);
+    setBall << <1, 1 >> >(device_px, device_py, device_vx, device_vy, device_ax, device_ay, device_radius, device_mass, n, idx, ball);
 }
 
 __device__ bool doCirclesOverlap(float x1, float y1, float r1, float x2, float y2, float r2)
@@ -247,5 +252,5 @@ std::vector<Ball> collisionBallCuda() {
 
     collisionBall << <grid, block >> > (device_px, device_py, device_vx, device_vy, device_radius, device_mass, n);
 
-    return deviceArrayToVector(device_balls, n);
+    return deviceArrayToVector();
 }
