@@ -47,9 +47,6 @@ public:
     bool isPressKey(SDL_Keycode _key) {
         return _key == keyCode;
     }
-    void resetKeyCode() {
-        keyCode = SDLK_UNKNOWN;
-    }
 
 public:
 	bool init() {
@@ -96,6 +93,7 @@ public:
         else if (leftMouse == KeyPress::RELEASE) leftMouse = KeyPress::NONE;
         if (rightMouse == KeyPress::PRESS) rightMouse = KeyPress::HOLD;
         else if (rightMouse == KeyPress::RELEASE) rightMouse = KeyPress::NONE;
+        if (keyCode != SDLK_UNKNOWN) keyCode = SDLK_UNKNOWN;
     }
 };
 

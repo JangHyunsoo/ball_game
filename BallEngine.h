@@ -84,7 +84,6 @@ public:
 	}
 
 	bool update(float deltaTime) {
-
 		test();
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::PRESS) || InputManager::getInstance().isRightMouse(KeyPress::PRESS))
@@ -230,9 +229,8 @@ public:
 
 	void test() {
 		if (InputManager::getInstance().isPressKey(SDLK_SPACE)) {
-			vecBalls[0].vx = 1000.f;
+			vecBalls[0].vx = 200.f;
 			//vecBalls[0].vy = 1000.f;
-			InputManager::getInstance().resetKeyCode();
 		}
 	}
 };
