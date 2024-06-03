@@ -25,7 +25,7 @@ private:
 	int height_;
 	char* window_name_;
 public:
-	bool init(char* _window_name, int _width, int _height) {
+	bool init(const char* _window_name, int _width, int _height) {
 		if (!initSDL(_window_name, _width, _height)) return false;
 		if (!initManager()) return false;
 
@@ -58,6 +58,7 @@ public:
 				average_fps = (double)count / total_time;
 				total_time -= 3;
 				count = 1;
+				cout << "Average : " << average_fps << '\n';
 			}
 			SDL_SetWindowTitle(window_, (("FPS: " + std::to_string(1 / deltaTime)) + (std::string)"  Average: " + std::to_string(average_fps)).c_str());
 
@@ -95,14 +96,13 @@ public:
 		SDL_Quit();
 	}
 private:
-	bool initSDL(char* _window_name, int _width, int _height) {
+	bool initSDL(const char* _window_name, int _width, int _height) {
 		if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 			return false;
 		}
 
 		width_ = _width;
 		height_ = _height;
-		window_name_ = _window_name;
 
 		window_ = SDL_CreateWindow(_window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, SDL_WINDOW_SHOWN);
 		renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);

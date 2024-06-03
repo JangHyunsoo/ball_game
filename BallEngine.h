@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <SDL.h>
 #include <cmath>
 #include "InputManager.h"
 
@@ -230,7 +231,6 @@ public:
 	void test() {
 		if (InputManager::getInstance().isPressKey(SDLK_SPACE)) {
 			vecBalls[0].vx = 200.f;
-			//vecBalls[0].vy = 1000.f;
 		}
 	}
 };
