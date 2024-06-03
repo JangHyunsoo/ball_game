@@ -23,7 +23,7 @@ private:
 
 	int width_;
 	int height_;
-	char* window_name_;
+
 public:
 	bool init(const char* _window_name, int _width, int _height) {
 		if (!initSDL(_window_name, _width, _height)) return false;
@@ -31,12 +31,14 @@ public:
 
 		return true;
 	}
+
 	bool logic() {
 		SDL_Event event;
 		Uint64 lastTime = SDL_GetPerformanceCounter();
 		double total_time = 0;
 		int count = 0;
 		double average_fps = 0;
+		double limit_time = 5;
 
 		while (running_) {
 			while (SDL_PollEvent(&event)) {
@@ -54,9 +56,9 @@ public:
 			total_time += deltaTime;
 			count++;
 
-			if (total_time >= 3) {
+			if (total_time >= limit_time) {
 				average_fps = (double)count / total_time;
-				total_time -= 3;
+				total_time -= limit_time;
 				count = 1;
 				cout << "Average : " << average_fps << '\n';
 			}
