@@ -12,7 +12,7 @@
 Ball* device_balls;
 int n;
 
-std: vector<Ball> deviceArrayToVector(Ball* device_array, int n) {
+std::vector<Ball> deviceArrayToVector(Ball* device_array, int n) {
     std::vector<Ball> host_vector(n);
 
     cudaMemcpy(host_vector.data(), device_array, n * sizeof(Ball), cudaMemcpyDeviceToHost);
@@ -171,6 +171,12 @@ std::vector<Ball> collisionBallCuda() {
     collisionBall <<<grid, block >>> (device_balls, n);
 
     return deviceArrayToVector(device_balls, n);
+}
+
+__global__ void test(Ball* balls, int n, int idx, float value) {
+    if (threadIdx.x == 0 && blockIdx.x == 0) {
+        balls[idx].vx = value;
+    }
 }
 
 void testCuda(int idx, float value) {
