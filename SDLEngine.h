@@ -1,7 +1,9 @@
 #pragma once
-#include <SDL.h>
 #include <iostream>
+#include <string>
+#include <SDL.h>
 #include "InputManager.h"
+#include "Ball.h"
 #include "BallEngine.h"
 
 class SDLEngine
@@ -24,15 +26,29 @@ private:
 	int height_;
 	char* window_name_;
 public:
-	bool init(char* _window_name, int _width, int _height) {
-		if (!initSDL(_window_name, _width, _height)) return false;
+	int getWidth() {
+		return width_;
+	}
+	int getHeight() {
+		return height_;
+	}
+	void setWindowName(const std::string& win_name) {
+		SDL_SetWindowTitle(window_, win_name.c_str());
+	}
+public:
+	bool initTest(char* window_name, int _width, int _height) {
+		if (!initSDL(window_name, _width, _height)) return false;
 		if (!initManager()) return false;
 
 		return true;
 	}
 	bool logic() {
 		SDL_Event event;
-		Uint32 lastTime = SDL_GetTicks();
+		Uint64 lastTime = SDL_GetPerformanceCounter();
+		double total_time = 0;
+		int count = 0;
+		double average_fps = 0;
+		double limit_time = 5;
 
 		while (running_) {
 			while (SDL_PollEvent(&event)) {
@@ -44,9 +60,19 @@ public:
 				InputManager::getInstance().update(event);
 			}
 
-			Uint32 currentTime = SDL_GetTicks();
-			float deltaTime = (currentTime - lastTime) / 1000.0f;
+			Uint64 currentTime = SDL_GetPerformanceCounter();
+			double deltaTime = (double)((currentTime - lastTime) / (double)SDL_GetPerformanceFrequency());
 			lastTime = currentTime;
+			total_time += deltaTime;
+			count++;
+
+			if (total_time >= limit_time) {
+				average_fps = (double)count / total_time;
+				total_time -= limit_time;
+				count = 1;
+				cout << "Average : " << average_fps << '\n';
+			}
+			SDL_SetWindowTitle(window_, (("FPS: " + std::to_string(1 / deltaTime)) + (std::string)"  Average: " + std::to_string(average_fps)).c_str());
 
 			update(deltaTime);
 
@@ -82,16 +108,15 @@ public:
 		SDL_Quit();
 	}
 private:
-	bool initSDL(char* _window_name, int _width, int _height) {
+	bool initSDL(char* window_name, int _width, int _height) {
 		if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 			return false;
 		}
 
 		width_ = _width;
 		height_ = _height;
-		window_name_ = _window_name;
 
-		window_ = SDL_CreateWindow(_window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, SDL_WINDOW_SHOWN);
+		window_ = SDL_CreateWindow(window_name, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, SDL_WINDOW_SHOWN);
 		renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
 
 		return true;
@@ -99,11 +124,11 @@ private:
 
 	bool initManager() {
 		if (!InputManager::getInstance().init()) {
-			cout << "InputManager init Error...\n";
+			std::cout << "InputManager init Error...\n";
 			return false;
 		}
-		if (!BallEngine::getInstance().init()) {
-			cout << "BallEngine init Error...\n";
+		if (!BallEngine::getInstance().init(width_,height_, 5000)) {
+			std::cout << "BallEngine init Error...\n";
 			return false;
 		}
 		return true;

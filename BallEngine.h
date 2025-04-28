@@ -1,20 +1,12 @@
 #pragma once
 #include <vector>
 #include <cmath>
+#include <iostream>
 #include "InputManager.h"
+#include "Ball.h"
+#include "cuda_partition.h"
 
 using namespace std;
-
-struct sBall
-{
-    float px, py; // 중앙
-    float vx, vy; // 속도
-    float ax, ay; // 가속
-    float radius; // 반지름
-    float mass; // 무게
-
-    int id; // idx
-};
 
 class BallEngine
 {
@@ -28,18 +20,17 @@ private:
 	BallEngine(BallEngine const& other) = delete;
 	void operator=(BallEngine const& other) = delete;
 
+private:
+	int screen_width_;
+	int screen_height_;
 
 private:
-	int screenWidth = 640;
-	int screenHeight = 640;
+	vector<Ball> vecBalls;
+	int selected_idx_ = -1;
 
-private:
-	vector<sBall> vecBalls;
-	sBall* pSelectedBall = nullptr;
-
-	void AddBall(float x, float y, float r = 5.0f)
+	void AddBall(float x, float y, float r)
 	{
-		sBall b;
+		Ball b;
 		b.px = x; b.py = y;
 		b.vx = 0; b.vy = 0;
 		b.ax = 0; b.ay = 0;
@@ -70,139 +61,72 @@ private:
 	}
 
 public:
-	bool init(int circle_count = 100)
+	bool init(int _width, int _height, int _circle_count)
 	{
 		float fDefaultRad = 8.0f;
+		selected_idx_ = -1;
+		screen_width_ = _width;
+		screen_height_ = _height;
 
-		for (int i = 0; i < circle_count; i++)
-			AddBall(rand() % screenWidth, rand() % screenHeight, rand() % 16 + 2);
+		AddBall(_width / 2, _height / 2, 20);
+
+		for (int i = 0; i < _circle_count; i++)
+			AddBall(rand() % screen_width_, rand() % screen_height_, rand() % 4 + 2);
+
+		initBallCuda(vecBalls);
 
 		return true;
 	}
 
-	bool update(float deltaTime) {
+	bool update(double deltaTime) {
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::PRESS) || InputManager::getInstance().isRightMouse(KeyPress::PRESS))
 		{
-			pSelectedBall = nullptr;
+			selected_idx_ = -1;
 			int mouse_x = InputManager::getInstance().getX();
 			int mouse_y = InputManager::getInstance().getY();
 
-			for (auto& ball : vecBalls)
-			{
-				if (isPointInCircle(ball.px, ball.py, ball.radius, mouse_x, mouse_y))
-				{
-					pSelectedBall = &ball;
-					break;
-				}
+			int selected_idx = selectBallCuda(mouse_x, mouse_y);
+			if (selected_idx != -1) {
+				selected_idx_ = selected_idx;
 			}
 		}
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::HOLD))
 		{
-			if (pSelectedBall != nullptr)
+			if (selected_idx_ != -1)
 			{
 				int mouse_x = InputManager::getInstance().getX();
 				int mouse_y = InputManager::getInstance().getY();
-				pSelectedBall->px = mouse_x;
-				pSelectedBall->py = mouse_y;
+				Ball ball = vecBalls[selected_idx_];
+				ball.px = mouse_x;
+				ball.py = mouse_y;
+				setBallArray(ball.id, ball);
 			}
 		}
 
 		if (InputManager::getInstance().isLeftMouse(KeyPress::RELEASE))
 		{
-			pSelectedBall = nullptr;
+			selected_idx_ = -1;
 		}
 
 		if (InputManager::getInstance().isRightMouse(KeyPress::RELEASE))
 		{
-			if (pSelectedBall != nullptr)
+			if (selected_idx_ != -1)
 			{
 				int mouse_x = InputManager::getInstance().getX();
 				int mouse_y = InputManager::getInstance().getY();
-				pSelectedBall->vx = 5.0f * ((pSelectedBall->px) - (float)mouse_x);
-				pSelectedBall->vy = 5.0f * ((pSelectedBall->py) - (float)mouse_y);
+				Ball ball = vecBalls[selected_idx_];
+				ball.vx = 5.0f * ((ball.px) - (float)mouse_x);
+				ball.vy = 5.0f * ((ball.py) - (float)mouse_y);
+				setBallArray(ball.id, ball);
 			}
 
-			pSelectedBall = nullptr;
-		}
-		
-		vector<pair<sBall*, sBall*>> vecCollidingPairs;
-
-		for (auto& ball : vecBalls)
-		{
-			ball.ax = -ball.vx * 0.8f;
-			ball.ay = -ball.vy * 0.8f;
-
-			ball.vx += ball.ax * deltaTime;
-			ball.vy += ball.ay * deltaTime;
-			ball.px += ball.vx * deltaTime;
-			ball.py += ball.vy * deltaTime;
-
-			if (ball.px < 0) ball.px += (float)screenWidth;
-			if (ball.px >= screenWidth) ball.px -= (float)screenWidth;
-			if (ball.py < 0) ball.py += (float)screenHeight;
-			if (ball.py >= screenHeight) ball.py -= (float)screenHeight;
-
-			if (fabs(ball.vx * ball.vx + ball.vy * ball.vy) < 0.01f)
-			{
-				ball.vx = 0;
-				ball.vy = 0;
-			}
+			selected_idx_ = -1;
 		}
 
-
-		for (auto& ball : vecBalls)
-		{
-			for (auto& target : vecBalls)
-			{
-				if (ball.id != target.id)
-				{
-					if (doCirclesOverlap(ball.px, ball.py, ball.radius, target.px, target.py, target.radius))
-					{
-						vecCollidingPairs.push_back({ &ball, &target });
-
-						float fDistance = sqrtf((ball.px - target.px) * (ball.px - target.px) + (ball.py - target.py) * (ball.py - target.py));
-
-						float fOverlap = 0.5f * (fDistance - ball.radius - target.radius);
-
-						ball.px -= fOverlap * (ball.px - target.px) / fDistance;
-						ball.py -= fOverlap * (ball.py - target.py) / fDistance;
-
-						target.px += fOverlap * (ball.px - target.px) / fDistance;
-						target.py += fOverlap * (ball.py - target.py) / fDistance;
-					}
-				}
-			}
-		}
-
-		for (auto c : vecCollidingPairs)
-		{
-			sBall* b1 = c.first;
-			sBall* b2 = c.second;
-
-			float fDistance = sqrtf((b1->px - b2->px) * (b1->px - b2->px) + (b1->py - b2->py) * (b1->py - b2->py));
-
-			float nx = (b2->px - b1->px) / fDistance;
-			float ny = (b2->py - b1->py) / fDistance;
-
-			float tx = -ny;
-			float ty = nx;
-
-			float dpTan1 = b1->vx * tx + b1->vy * ty;
-			float dpTan2 = b2->vx * tx + b2->vy * ty;
-
-			float dpNorm1 = b1->vx * nx + b1->vy * ny;
-			float dpNorm2 = b2->vx * nx + b2->vy * ny;
-
-			float m1 = (dpNorm1 * (b1->mass - b2->mass) + 2.0f * b2->mass * dpNorm2) / (b1->mass + b2->mass);
-			float m2 = (dpNorm2 * (b2->mass - b1->mass) + 2.0f * b1->mass * dpNorm1) / (b1->mass + b2->mass);
-
-			b1->vx = tx * dpTan1 + nx * m1;
-			b1->vy = ty * dpTan1 + ny * m1;
-			b2->vx = tx * dpTan2 + nx * m2;
-			b2->vy = ty * dpTan2 + ny * m2;
-		}
+		moveBallCuda(screen_width_, screen_height_, deltaTime);
+		vecBalls = collisionBallCuda();
 
 		return true;
 	}
@@ -216,13 +140,22 @@ public:
 
 		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
 
-		if (pSelectedBall != nullptr) {
+		if (selected_idx_ != -1) {
 			int mouse_x = InputManager::getInstance().getX();
 			int mouse_y = InputManager::getInstance().getY();
-			SDL_RenderDrawLine(renderer, (int)pSelectedBall->px, (int)pSelectedBall->py, mouse_x, mouse_y);
+			Ball ball = vecBalls[selected_idx_];
+			SDL_RenderDrawLine(renderer, (int)ball.px, (int)ball.py, mouse_x, mouse_y);
 		}
 	}
 
+	void destory() {
+		freeBallCuda();
+	}
 
+	void test() {
+		if (InputManager::getInstance().isPressKey(SDLK_SPACE)) {
+			testCuda(0, 200);
+		}
+	}
 };
 
